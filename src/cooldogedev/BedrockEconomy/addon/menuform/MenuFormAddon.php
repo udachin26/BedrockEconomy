@@ -4,11 +4,6 @@ declare(strict_types=1);
 namespace cooldogedev\BedrockEconomy\addon\menuform;
 
 use cooldogedev\BedrockEconomy\addon\Addon;
-use cooldogedev\BedrockEconomy\api\BedrockEconomyAPI;
-use cooldogedev\libSQL\context\ClosureContext;
-use Ifera\ScoreHud\event\PlayerTagUpdateEvent;
-use Ifera\ScoreHud\scoreboard\ScoreTag;
-use pocketmine\Server;
 
 final class MenuFormAddon extends Addon
 {
