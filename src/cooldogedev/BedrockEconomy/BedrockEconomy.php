@@ -29,6 +29,7 @@ namespace cooldogedev\BedrockEconomy;
 use cooldogedev\BedrockEconomy\account\AccountManager;
 use cooldogedev\BedrockEconomy\addon\AddonManager;
 use cooldogedev\BedrockEconomy\api\BedrockEconomyAPI;
+use cooldogedev\BedrockEconomy\api\version\LegacyBEAPI;
 use cooldogedev\BedrockEconomy\command\admin\AddBalanceCommand;
 use cooldogedev\BedrockEconomy\command\admin\DeleteAccountCommand;
 use cooldogedev\BedrockEconomy\command\admin\RemoveBalanceCommand;
@@ -43,6 +44,7 @@ use cooldogedev\BedrockEconomy\listener\PlayerListener;
 use cooldogedev\BedrockEconomy\query\QueryManager;
 use cooldogedev\BedrockEconomy\transaction\TransactionManager;
 use cooldogedev\libSQL\ConnectionPool;
+use CortexPE\Commando\PacketHooker;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\utils\TextFormat;
@@ -71,9 +73,15 @@ final class BedrockEconomy extends PluginBase
         return $this->accountManager;
     }
 
-    public function getAPI(): BedrockEconomyAPI
+    /**
+     * @return LegacyBEAPI
+     * @link BedrockEconomyAPI::beta() for the new API
+     *
+     * @deprecated used only for backwards compatibility.
+     */
+    public function getAPI(): LegacyBEAPI
     {
-        return BedrockEconomyAPI::getInstance();
+        return BedrockEconomyAPI::legacy();
     }
 
     public function getTransactionManager(): TransactionManager
@@ -88,7 +96,6 @@ final class BedrockEconomy extends PluginBase
         }
         LanguageManager::init($this, $this->getConfig()->get("language"));
         BedrockEconomy::setInstance($this);
-        BedrockEconomyAPI::register($this);
     }
 
     protected function onEnable(): void
@@ -126,6 +133,10 @@ final class BedrockEconomy extends PluginBase
 
     protected function initializeCommands(): void
     {
+        if (!PacketHooker::isRegistered()) {
+            PacketHooker::register($this);
+        }
+
         $commands = [];
 
         $commandsData = LanguageManager::getArray("commands");

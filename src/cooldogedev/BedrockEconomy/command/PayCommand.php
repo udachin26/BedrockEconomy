@@ -99,9 +99,26 @@ final class PayCommand extends BaseCommand
             return;
         }
 
-        BedrockEconomyAPI::getInstance()->transferFromPlayerBalance($sender->getName(), $receiver, $amount, ClosureContext::create(
+        BedrockEconomyAPI::legacy()->transferFromPlayerBalance($sender->getName(), $receiver, $amount, ClosureContext::create(
             function (bool $success, Closure $_, ?string $error) use ($sender, $receiver, $amount) {
+                if ($success) {
+                    $receiverPlayer = $this->getOwningPlugin()->getServer()->getPlayerByPrefix($receiver);
+
+                    $receiverPlayer?->sendMessage(LanguageManager::getTranslation(KnownTranslations::PAYMENT_RECEIVE, [
+                            TranslationKeys::AMOUNT => $amount,
+                            TranslationKeys::PAYER => $sender->getName(),
+                            TranslationKeys::CURRENCY_NAME => $this->getOwningPlugin()->getCurrencyManager()->getName(),
+                            TranslationKeys::CURRENCY_SYMBOL => $this->getOwningPlugin()->getCurrencyManager()->getSymbol()
+                        ]
+                    ));
+                }
+
+                if ($sender instanceof Player && !$sender->isConnected()) {
+                    return;
+                }
+
                 if ($error !== null) {
+
                     $causer = ltrim(strstr($error, ':'), ':');
                     $error = substr($error, 0, strpos($error, ":"));
 
@@ -117,7 +134,7 @@ final class PayCommand extends BaseCommand
                             TranslationKeys::RECEIVER => $receiver,
 
                             TranslationKeys::PLAYER => $causer,
-                            TranslationKeys::AMOUNT => $amount,
+                            TranslationKeys::AMOUNT => number_format($amount, 0, ".", $this->getOwningPlugin()->getCurrencyManager()->getNumberSeparator()),
                             TranslationKeys::CURRENCY_NAME => $this->getOwningPlugin()->getCurrencyManager()->getName(),
                             TranslationKeys::CURRENCY_SYMBOL => $this->getOwningPlugin()->getCurrencyManager()->getSymbol(),
                             TranslationKeys::LIMIT => $this->getOwningPlugin()->getCurrencyManager()->getBalanceCap() ?? "N/A",
@@ -126,18 +143,8 @@ final class PayCommand extends BaseCommand
                     return;
                 }
 
-                $receiverPlayer = $this->getOwningPlugin()->getServer()->getPlayerByPrefix($receiver);
-
-                $receiverPlayer?->sendMessage(LanguageManager::getTranslation(KnownTranslations::PAYMENT_RECEIVE, [
-                        TranslationKeys::AMOUNT => $amount,
-                        TranslationKeys::PAYER => $sender->getName(),
-                        TranslationKeys::CURRENCY_NAME => $this->getOwningPlugin()->getCurrencyManager()->getName(),
-                        TranslationKeys::CURRENCY_SYMBOL => $this->getOwningPlugin()->getCurrencyManager()->getSymbol()
-                    ]
-                ));
-
                 $sender->sendMessage(LanguageManager::getTranslation(KnownTranslations::PAYMENT_SEND, [
-                        TranslationKeys::AMOUNT => $amount,
+                        TranslationKeys::AMOUNT => number_format($amount, 0, ".", $this->getOwningPlugin()->getCurrencyManager()->getNumberSeparator()),
                         TranslationKeys::RECEIVER => $receiver,
                         TranslationKeys::CURRENCY_NAME => $this->getOwningPlugin()->getCurrencyManager()->getName(),
                         TranslationKeys::CURRENCY_SYMBOL => $this->getOwningPlugin()->getCurrencyManager()->getSymbol()
